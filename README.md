@@ -21,3 +21,6 @@ Open your BigQuery Console.
 Run SQL Queries:
 
 Use the SQL queries provided below to extract, normalize, and compare business hours data from both platforms.
+
+Output After Analyzing in the Python :
+<img width="711" alt="output" src="https://github.com/user-attachments/assets/50405326-8118-4dd9-a1c1-b84f6c55fdc0">
