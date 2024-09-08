@@ -1,0 +1,82 @@
+
+import pandas as pd
+import json
+
+job = client.get_job('bquxjob_79c220bd_191d2684baf') 
+results1 = job.to_dataframe()
+results1
+
+job = client.get_job('.bquxjob_79c220bd_191d2684baf')results = job.to_dataframe()
+results
+output
+
+
+
+start_times = []
+end_times = []
+restaurant_info = []
+active_days = []
+responses = results1['response']
+b_names = results1['b_name']
+vb_names = results1['vb_name']
+
+for response, b_name, vb_name in zip(responses, b_names, vb_names):
+    try:
+        data = json.loads(response)
+        menus = data.get('data', {}).get('menus', {})
+        for menu_data in menus.values():
+
+            sections = menu_data.get('sections', [])
+            section_data = sections[0]
+            regular_hours = section_data.get('regularHours', [])
+            for hour_data in regular_hours:
+                start_time = hour_data.get('startTime', '')
+                end_time = hour_data.get('endTime', '')
+                days_bit_array = hour_data.get('daysBitArray', [])
+                start_times.append(start_time)
+                end_times.append(end_time)
+                restaurant_info.append((b_name, vb_name))
+
+    except (json.JSONDecodeError, KeyError, IndexError):
+        print("Error parsing JSON or missing data in this row.")
+
+table_data = {
+    'Start Time': start_times,
+    'End Time': end_times,
+    'Restaurant Info ': restaurant_info,
+
+}
+table_df1 = pd.DataFrame(table_data)
+
+print(table_df1[1:])
+
+import pandas as pdimport jsonresponses = results['response']b_names = results['b_name']vb_names = results['vb_name']delivery_from_times = []delivery_to_times = []delivery_days_of_week = []restaurant_info = []for response, b_name, vb_name in zip(responses, b_names, vb_names):    try:        data = json.loads(response)        delivery_schedule = data.get('availability_by_catalog', {}).get('STANDARD_DELIVERY', {})        delivery_hours_info = delivery_schedule.get('schedule_rules', [])        for entry in delivery_hours_info:            from_time = entry.get('from')            to_time = entry.get('to')            delivery_from_times.append(from_time)            delivery_to_times.append(to_time)            restaurant_info.append((b_name, vb_name))    except (json.JSONDecodeError, KeyError):        print("Error parsing JSON or missing data in this row.")table_data = {    'Restaurant Info ': restaurant_info,    'Delivery From Time': delivery_from_times,    'Delivery To Time': delivery_to_times,}table_df2 = pd.DataFrame(table_data)print(table_df2)
+
+ def classify_hours(uber_start, uber_end, grubhub_start, grubhub_end):
+    uber_start_hh_mm_ss = uber_start + ':00'
+    uber_end_hh_mm_ss = uber_end + ':00'
+    grubhub_start_hh_mm_ss = grubhub_start
+    grubhub_end_hh_mm_ss = grubhub_end
+
+    if uber_start_hh_mm_ss <= grubhub_start_hh_mm_ss and uber_end_hh_mm_ss >= grubhub_end_hh_mm_ss:
+        return "In Range"
+    elif pd.to_timedelta(grubhub_start_hh_mm_ss) - pd.to_timedelta(uber_start_hh_mm_ss) <= pd.Timedelta('0 days 00:05:00') and pd.to_timedelta(grubhub_end_hh_mm_ss) - pd.to_timedelta(uber_end_hh_mm_ss) <= pd.Timedelta('0 days 00:05:00'):
+        return "Out of Range with 5 mins difference"
+    else:
+        return "Out of Range"
+
+
+merged_table = pd.merge(table_df1, table_df2, on=['Restaurant Info '], how='inner')
+merged_table['is_out_of_range'] = merged_table.apply(lambda row: classify_hours(
+    row['Start Time'],
+    row['End Time'],
+    row['Delivery From Time'],
+    row['Delivery From Time']
+), axis=1)
+
+ print(merged_table)
+
+ counts = merged_table['is_out_of_range'].value_counts()
+
+# Display the counts
+print(counts)
